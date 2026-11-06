@@ -22,7 +22,6 @@ jobs:
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           
-          echo "Downloading Android Command Line Tools..."
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
           unzip -q tools.zip -d temp_tools
           mv temp_tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
@@ -30,10 +29,7 @@ jobs:
 
           export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
           
-          echo "Accepting licenses..."
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
-          
-          echo "Installing build tools and platforms..."
           sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-33" "build-tools;33.0.2" "platform-tools"
 
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
@@ -154,7 +150,8 @@ jobs:
           EOF
           fi
 
-          gradle wrapper --gradle-version 8.0.2
+          # Force a compatible Gradle wrapper version (8.1.1)
+          gradle wrapper --gradle-version 8.1.1
           chmod +x gradlew
           ./gradlew assembleDebug
 
