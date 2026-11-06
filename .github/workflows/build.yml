@@ -17,16 +17,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Build Clean TV APK
         run: |
-          mkdir -p gradle/wrapper
-          echo 'distributionUrl=https\://services.gradle.org/distributions/gradle-8.0.2-bin.zip' > gradle/wrapper/gradle-wrapper.properties
+          mkdir -p app/src/main/java/com/example/tvapp
+          mkdir -p app/src/main/res/layout
           
-          cat << 'EOF' > settings.gradle
-          rootProject.name = "TheOGPirateBot"
-          include ':app'
-          EOF
-          
+          # Create settings.gradle
+          echo 'rootProject.name = "TheOGPirateBot"' > settings.gradle
+          echo "include ':app'" >> settings.gradle
+
+          # Create build.gradle (Project)
           cat << 'EOF' > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -36,7 +39,8 @@ jobs:
               repositories { google(); mavenCentral() }
           }
           EOF
-          
+
+          # Create build.gradle (App)
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -54,7 +58,90 @@ jobs:
               implementation 'androidx.appcompat:appcompat:1.6.1'
           }
           EOF
-          
+
+          # Create AndroidManifest.xml if missing
+          if [ ! -f "app/src/main/AndroidManifest.xml" ]; then
+            cat << 'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+              <uses-feature android:name="android.software.leanback" android:required="true" />
+              <application
+                  android:label="TheOGPirateBot"
+                  android:theme="@style/Theme.AppCompat.NoActionBar">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:screenOrientation="landscape">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                          <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          fi
+
+          # Create layout if missing
+          if [ ! -f "app/src/main/res/layout/activity_main.xml" ]; then
+            mkdir -p app/src/main/res/layout
+            cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+              <WebView
+                  android:id="@+id/webview"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:focusable="true"
+                  android:focusableInTouchMode="true" />
+          </RelativeLayout>
+          EOF
+          fi
+
+          # Create Java file if missing
+          if [ ! -f "app/src/main/java/com/example/tvapp/MainActivity.java" ]; then
+            cat << 'EOF' > app/src/main/java/com/example/tvapp/MainActivity.java
+          package com.example.tvapp;
+          import android.os.Bundle;
+          import android.view.KeyEvent;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import androidx.appcompat.app.AppCompatActivity;
+          public class MainActivity extends AppCompatActivity {
+              private WebView webView;
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.activity_main);
+                  webView = findViewById(R.id.webview);
+                  WebSettings webSettings = webView.getSettings();
+                  webSettings.setJavaScriptEnabled(true);
+                  webSettings.setDomStorageEnabled(true);
+                  webSettings.setUseWideViewPort(true);
+                  webSettings.setLoadWithOverviewMode(true);
+                  webView.setFocusable(true);
+                  webView.setFocusableInTouchMode(true);
+                  webView.setWebViewClient(new WebViewClient());
+                  webView.loadUrl("https://theogpiratebot.com");
+              }
+              @Override
+              public boolean onKeyDown(int keyCode, KeyEvent event) {
+                  if ((keyCode == KeyEvent.KEYCODE_BACK) && webView.canGoBack()) {
+                      webView.goBack();
+                      return true;
+                  }
+                  return super.onKeyDown(event);
+              }
+          }
+          EOF
+          fi
+
           gradle wrapper
           chmod +x gradlew
           ./gradlew assembleDebug
