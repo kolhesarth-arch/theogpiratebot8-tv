@@ -150,7 +150,11 @@ jobs:
           EOF
           fi
 
-          # Force a compatible Gradle wrapper version (8.1.1)
+          # Download and install Gradle 8.1.1 directly to avoid global version mismatch
+          wget -q https://services.gradle.org/distributions/gradle-8.1.1-bin.zip
+          unzip -q gradle-8.1.1-bin.zip
+          export PATH=$PWD/gradle-8.1.1/bin:$PATH
+          
           gradle wrapper --gradle-version 8.1.1
           chmod +x gradlew
           ./gradlew assembleDebug
