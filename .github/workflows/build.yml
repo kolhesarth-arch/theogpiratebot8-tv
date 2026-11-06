@@ -21,12 +21,12 @@ jobs:
         run: |
           mkdir -p gradle/wrapper
           echo 'distributionUrl=https\://services.gradle.org/distributions/gradle-8.0.2-bin.zip' > gradle/wrapper/gradle-wrapper.properties
-
+          
           cat << 'EOF' > settings.gradle
           rootProject.name = "TheOGPirateBot"
           include ':app'
           EOF
-
+          
           cat << 'EOF' > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -36,7 +36,7 @@ jobs:
               repositories { google(); mavenCentral() }
           }
           EOF
-
+          
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -54,8 +54,9 @@ jobs:
               implementation 'androidx.appcompat:appcompat:1.6.1'
           }
           EOF
-
+          
           gradle wrapper
+          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload Clean TV APK
