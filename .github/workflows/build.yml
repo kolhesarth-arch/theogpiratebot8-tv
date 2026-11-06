@@ -17,8 +17,27 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install Android SDK Manually
+        run: |
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          
+          echo "Downloading Android Command Line Tools..."
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
+          unzip -q tools.zip -d temp_tools
+          mv temp_tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+          rm -rf tools.zip temp_tools
+
+          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
+          
+          echo "Accepting licenses..."
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
+          
+          echo "Installing build tools and platforms..."
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-33" "build-tools;33.0.2" "platform-tools"
+
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Build Clean TV APK
         run: |
@@ -135,7 +154,6 @@ jobs:
           EOF
           fi
 
-          # Generate the gradle wrapper first so gradlew exists
           gradle wrapper --gradle-version 8.0.2
           chmod +x gradlew
           ./gradlew assembleDebug
